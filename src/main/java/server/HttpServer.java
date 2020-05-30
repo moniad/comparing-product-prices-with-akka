@@ -1,3 +1,5 @@
+package server;
+
 import akka.NotUsed;
 import akka.actor.ActorSystem;
 import akka.http.javadsl.ConnectHttp;
@@ -11,6 +13,8 @@ import akka.http.javadsl.server.Route;
 import akka.stream.Materializer;
 import akka.stream.javadsl.Flow;
 import lombok.Getter;
+import model.ComparisonRequest;
+import service.ComparisonService;
 
 import java.util.concurrent.CompletionStage;
 
@@ -23,7 +27,7 @@ public class HttpServer extends AllDirectives implements Runnable {
     private CompletionStage<ServerBinding> binding;
     private final Materializer materializer;
 
-    HttpServer(ActorSystem system) {
+    public HttpServer(ActorSystem system) {
         this.system = system;
         materializer = Materializer.matFromSystem(system);
     }
@@ -38,7 +42,7 @@ public class HttpServer extends AllDirectives implements Runnable {
         binding = http.bindAndHandle(routeFlow,
                 ConnectHttp.toHost("localhost", 8080), materializer);
 
-        System.out.println("Server online at http://localhost:8080/");
+        System.out.println("server.Server online at http://localhost:8080/");
     }
 
     private Route createRoute() {

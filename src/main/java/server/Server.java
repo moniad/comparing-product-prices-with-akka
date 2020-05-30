@@ -1,10 +1,15 @@
+package server;
+
 import akka.actor.AbstractActor;
 import akka.actor.AllForOneStrategy;
-import akka.actor.Props;
 import akka.actor.SupervisorStrategy;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import akka.japi.pf.DeciderBuilder;
+import client.DbClient;
+import model.ComparisonRequest;
+import model.PriceComparisonResponse;
+import service.ComparisonService;
 
 import java.time.Duration;
 
@@ -56,8 +61,8 @@ public class Server extends AbstractActor {
     // optional
     @Override
     public void preStart() {
-        context().actorOf(Props.create(Z1_MultiplyWorker.class), "multiplyWorker"); // todo: remove or change to shopActors?
-        context().actorOf(Props.create(Z1_DivideWorker.class), "divideWorker");
+//        context().actorOf(Props.create(Z1_MultiplyWorker.class), "multiplyWorker"); // todo: remove or change to shopActors?
+//        context().actorOf(Props.create(Z1_DivideWorker.class), "divideWorker");
 
         dbClient.createRequestTable();
     }

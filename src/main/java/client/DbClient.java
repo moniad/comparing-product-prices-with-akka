@@ -1,3 +1,5 @@
+package client;
+
 import lombok.Getter;
 
 import java.sql.*;

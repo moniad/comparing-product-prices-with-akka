@@ -2,6 +2,9 @@ import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
 import akka.http.javadsl.ServerBinding;
+import client.Client;
+import server.HttpServer;
+import server.Server;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -29,7 +32,7 @@ public class Main {
 
     private static void createClients() {
         for (int i = 0; i < clientsCount; i++) {
-            ActorRef client = system.actorOf(Props.create(BaseClient.class, i, server), "client" + i);
+            ActorRef client = system.actorOf(Props.create(Client.class, i, server), "client" + i);
             clientsList.add(client);
         }
     }

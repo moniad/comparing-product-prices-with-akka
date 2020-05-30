@@ -1,12 +1,16 @@
+package client;
+
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
+import model.ComparisonRequest;
+import model.PriceComparisonResponse;
 
-public class BaseClient extends AbstractActor {
+public class Client extends AbstractActor {
     private final int clientNumber;
     protected ActorRef server;
     private final String CLIENT_LOG_STRING;
 
-    BaseClient(int clientNumber, ActorRef server) {
+    Client(int clientNumber, ActorRef server) {
         this.clientNumber = clientNumber;
         this.server = server;
         this.CLIENT_LOG_STRING = String.format("[CLIENT NO. %d] ", clientNumber);

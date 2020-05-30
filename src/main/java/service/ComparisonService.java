@@ -1,7 +1,12 @@
+package service;
+
 import akka.actor.ActorSystem;
 import akka.http.javadsl.Http;
 import akka.http.javadsl.model.HttpRequest;
 import akka.stream.Materializer;
+import client.DbClient;
+import model.ComparisonRequest;
+import model.PriceComparisonResponse;
 import org.jsoup.Jsoup;
 
 import java.util.Random;
