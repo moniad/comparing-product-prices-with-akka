@@ -40,7 +40,7 @@ public class Server extends AbstractActor {
                     System.out.println(SERVER_LOG_STRING + "RECEIVED msg: " + productName);
 
                     int price1 = getPrice();
-                    int price2 = getPrice(); // TODO: needs to be paralleled
+                    int price2 = getPrice(); // TODO: this and db access as well need to be paralleled
                     // todo: handle timeouts
 
                     int occurrenceCount = handleClientRequest(productName);

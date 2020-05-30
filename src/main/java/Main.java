@@ -1,6 +1,7 @@
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
+import akka.http.javadsl.ServerBinding;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -13,12 +14,16 @@ public class Main {
     final static ActorSystem system = ActorSystem.create("local_system");
     private final static ActorRef server = system.actorOf(Props.create(Server.class), "server");
     private final static int clientsCount = 3;
+    private static final HttpServer httpServer = new HttpServer(system);
+    private static Thread httpServerThread;
 
     public static void main(String[] args) {
         createClients();
+        startHttpServer();
         System.out.println("Started app");
         parseInput();
         // finish
+        unbindServer();
         system.terminate();
     }
 
@@ -27,7 +32,11 @@ public class Main {
             ActorRef client = system.actorOf(Props.create(BaseClient.class, i, server), "client" + i);
             clientsList.add(client);
         }
-//        system.actorOf(Props.create(CommandLineClient.class, server), "commandLineClient");
+    }
+
+    static void startHttpServer() {
+        httpServerThread = new Thread(httpServer);
+        httpServerThread.start();
     }
 
     private static void parseInput() {
@@ -56,5 +65,17 @@ public class Main {
                 System.err.println(e.getMessage());
             }
         }
+    }
+
+    private static void unbindServer() {
+        try {
+            httpServerThread.join();
+        } catch (InterruptedException e) {
+            System.out.println("Interrupted");
+        }
+        httpServer.getBinding()
+                .thenCompose(ServerBinding::unbind) // trigger unbinding from the port
+                .thenAccept(unbound -> system.terminate()); // and shutdown when done
+        System.out.println("Unbinded HTTP server. Closing app...");
     }
 }
