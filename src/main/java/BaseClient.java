@@ -18,9 +18,10 @@ public class BaseClient extends AbstractActor {
         return receiveBuilder()
                 .match(String.class, productName -> {
                     System.out.println(CLIENT_LOG_STRING + "asking server for " + productName + "'s price...");
-                    server.tell(productName, getSelf());
+                    ComparisonRequest comparisonRequest = ComparisonRequest.builder().productName(productName).build();
+                    server.tell(comparisonRequest, getSelf());
                 })
-                .match(ComparisonResponse.class, response -> {
+                .match(PriceComparisonResponse.class, response -> {
                     System.out.println(CLIENT_LOG_STRING + "RECEIVED: " + response);
                 })
                 .matchAny(i -> System.out.println(CLIENT_LOG_STRING + "RECEIVED: unknown message"))

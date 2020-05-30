@@ -1,9 +1,9 @@
 import lombok.Builder;
-import lombok.ToString;
+import lombok.Data;
 
-@ToString
+@Data
 @Builder
-public class ComparisonResponse {
+public class PriceComparisonResponse {
     private final int smallerPrice;
     private final int occurrenceCount;
 }
