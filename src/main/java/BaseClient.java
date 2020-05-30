@@ -1,0 +1,33 @@
+import akka.actor.AbstractActor;
+import akka.actor.ActorRef;
+
+public class BaseClient extends AbstractActor {
+    private final int clientNumber;
+    protected ActorRef server;
+    private final String CLIENT_LOG_STRING;
+
+    BaseClient(int clientNumber, ActorRef server) {
+        this.clientNumber = clientNumber;
+        this.server = server;
+        this.CLIENT_LOG_STRING = String.format("[CLIENT NO. %d] ", clientNumber);
+    }
+
+    @Override
+    public Receive createReceive() {
+        // result from server TODO
+        return receiveBuilder()
+                .match(String.class, productName -> {
+                    System.out.println(CLIENT_LOG_STRING + "asking server for " + productName + "'s price...");
+                    server.tell(productName, getSelf());
+                })
+                .match(ComparisonResponse.class, response -> {
+                    System.out.println(CLIENT_LOG_STRING + "RECEIVED: " + response);
+                })
+                .matchAny(i -> System.out.println(CLIENT_LOG_STRING + "RECEIVED: unknown message"))
+                .build();
+    }
+
+    protected void terminate() { // todo: ok?
+//        server.terminate();
+    }
+}
