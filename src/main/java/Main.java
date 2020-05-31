@@ -18,7 +18,7 @@ public class Main {
     final static ActorSystem system = ActorSystem.create("local_system");
     private final static ActorRef server = system.actorOf(Props.create(Server.class), "server");
     private final static int clientsCount = 3;
-    private static final HttpServer httpServer = new HttpServer(system);
+    private static final HttpServer httpServer = new HttpServer(system, server);
     private static Thread httpServerThread;
 
     public static void main(String[] args) {

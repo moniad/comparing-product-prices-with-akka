@@ -2,26 +2,23 @@ package server.comparator;
 
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
-import akka.actor.Props;
 import model.request.ComparisonRequest;
 import model.response.OccurrenceCountResponse;
 import model.response.PriceComparisonResponse;
 import model.response.SinglePriceResponse;
-import server.finder.OccurrencesCountFinder;
-import server.finder.PriceFinder;
+import server.util.ResponseUtil;
 
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static akka.pattern.Patterns.ask;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class PriceComparator extends AbstractActor {
     private final String PRICE_COMPARATOR_LOG_STRING = "[PRICE COMP.] ";
     private final Duration timeoutDuration = Duration.ofMillis(300);
     private final ActorRef server;
 
-    PriceComparator(ActorRef server) {
+    public PriceComparator(ActorRef server) {
         this.server = server;
     }
 
@@ -36,38 +33,49 @@ public class PriceComparator extends AbstractActor {
                 .build();
     }
 
-    private void prepareAndSendResponseToClient(ComparisonRequest comparisonRequest) {
-        ActorRef client = getSender();
-        ActorRef priceFinderActor1 = context().actorOf(Props.create(PriceFinder.class), "priceFinder1");
-        ActorRef priceFinderActor2 = context().actorOf(Props.create(PriceFinder.class), "priceFinder2");
-        ActorRef occurrencesCountActor = context().actorOf(Props.create(OccurrencesCountFinder.class), "occurrenceFinder1");
+    public PriceComparisonResponse getPriceComparisonResponse(ComparisonRequest comparisonRequest) {
+        ResponseUtil responseUtil = prepareResponse(comparisonRequest);
+        AtomicReference<PriceComparisonResponse> priceComparisonResponse = new AtomicReference<>();
 
-        final CompletableFuture<Object> price1 = ask(priceFinderActor1, comparisonRequest, timeoutDuration).toCompletableFuture();
-        final CompletableFuture<Object> price2 = ask(priceFinderActor2, comparisonRequest, timeoutDuration).toCompletableFuture();
-        final CompletableFuture<Object> occurrencesCount1 = ask(occurrencesCountActor, comparisonRequest, timeoutDuration).toCompletableFuture();
-
-        final AtomicInteger smallerPrice = new AtomicInteger(-1);
-        final AtomicInteger occurrencesCount = new AtomicInteger(-1);
-
-        price1.whenComplete((res, err) -> tryToSetSmallerPrice((SinglePriceResponse) res, err, smallerPrice));
-        price2.whenComplete((res, err) -> tryToSetSmallerPrice((SinglePriceResponse) res, err, smallerPrice));
-        occurrencesCount1.whenComplete((res, err) -> tryToSetOccurrencesCount((OccurrenceCountResponse) res, err, occurrencesCount));
-
-        CompletableFuture.allOf(price1, price2, occurrencesCount1).whenComplete((res, err) -> {
-            buildAndSendResponse(comparisonRequest, client, smallerPrice, occurrencesCount);
-            context().stop(self());
-        });
+        CompletableFuture.allOf(responseUtil.getPrice1(), responseUtil.getPrice2(), responseUtil.getOccurrencesCount1())
+                .whenComplete((res, err) -> priceComparisonResponse.set(buildResponse(responseUtil.getSmallerPrice(),
+                        responseUtil.getOccurrencesCount())));
+        return priceComparisonResponse.get();
     }
 
-    private void buildAndSendResponse(ComparisonRequest comparisonRequest, ActorRef client, AtomicInteger smallerPrice, AtomicInteger occurrencesCount) {
+    private ResponseUtil prepareResponse(ComparisonRequest comparisonRequest) {
+        ResponseUtil responseUtil = new ResponseUtil(context(), getSender(), comparisonRequest, timeoutDuration);
+
+        responseUtil.getPrice1().whenComplete((res, err) -> tryToSetSmallerPrice((SinglePriceResponse) res, err, responseUtil));
+        responseUtil.getPrice2().whenComplete((res, err) -> tryToSetSmallerPrice((SinglePriceResponse) res, err, responseUtil));
+        responseUtil.getOccurrencesCount1().whenComplete((res, err) -> tryToSetOccurrencesCount((OccurrenceCountResponse) res, err, responseUtil));
+
+        return responseUtil;
+    }
+
+    private void prepareAndSendResponseToClient(ComparisonRequest comparisonRequest) {
+        ResponseUtil responseUtil = prepareResponse(comparisonRequest);
+
+        CompletableFuture.allOf(responseUtil.getPrice1(), responseUtil.getPrice2(), responseUtil.getOccurrencesCount1())
+                .whenComplete((res, err) -> {
+                    PriceComparisonResponse priceComparisonResponse = buildResponse(responseUtil.getSmallerPrice(),
+                            responseUtil.getOccurrencesCount());
+                    sendResponse(comparisonRequest, priceComparisonResponse, responseUtil.getClient());
+                    context().stop(self());
+                });
+    }
+
+    private PriceComparisonResponse buildResponse(AtomicInteger smallerPrice, AtomicInteger occurrencesCount) {
         int smallerPriceValue = smallerPrice.get();
         int occurrencesCountValue = occurrencesCount.get();
 
-        PriceComparisonResponse priceComparisonResponse = PriceComparisonResponse.builder()
+        return PriceComparisonResponse.builder()
                 .occurrenceCount(occurrencesCountValue == -1 ? null : occurrencesCountValue)
                 .smallerPrice(smallerPriceValue == -1 ? null : smallerPriceValue)
                 .build();
+    }
 
+    private void sendResponse(ComparisonRequest comparisonRequest, PriceComparisonResponse priceComparisonResponse, ActorRef client) {
         logSendingResponse(comparisonRequest, priceComparisonResponse);
         client.tell(priceComparisonResponse, server);
     }
@@ -82,12 +90,13 @@ public class PriceComparator extends AbstractActor {
 
     }
 
-    private void tryToSetSmallerPrice(SinglePriceResponse res, Object err, AtomicInteger smallerPrice) {
+    private void tryToSetSmallerPrice(SinglePriceResponse res, Object err, ResponseUtil responseUtil) {
+        AtomicInteger smallerPrice = responseUtil.getSmallerPrice();
         if (err == null) {
             int smallerPriceValue = smallerPrice.get();
             int resInt = res.getPrice();
             if (smallerPriceValue == -1) {
-                smallerPrice.set(resInt);
+                responseUtil.setSmallerPrice(resInt);
             } else {
                 smallerPrice.getAndSet(Math.min(resInt, smallerPrice.get()));
             }
@@ -96,10 +105,10 @@ public class PriceComparator extends AbstractActor {
         }
     }
 
-    private void tryToSetOccurrencesCount(OccurrenceCountResponse res, Object err, AtomicInteger occurrencesCount) {
+    private void tryToSetOccurrencesCount(OccurrenceCountResponse res, Object err, ResponseUtil responseUtil) {
         if (err == null) {
             int resInt = res.getOccurrenceCount();
-            occurrencesCount.set(resInt);
+            responseUtil.setOccurrencesCount(resInt);
         } else {
             System.out.println(PRICE_COMPARATOR_LOG_STRING + ": occurrencesCount unavailable");
         }

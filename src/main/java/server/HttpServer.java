@@ -1,6 +1,7 @@
 package server;
 
 import akka.NotUsed;
+import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.http.javadsl.ConnectHttp;
 import akka.http.javadsl.Http;
@@ -14,6 +15,7 @@ import akka.stream.Materializer;
 import akka.stream.javadsl.Flow;
 import lombok.Getter;
 import model.request.ComparisonRequest;
+import server.comparator.PriceComparator;
 import server.service.ComparisonService;
 
 import java.util.concurrent.CompletionStage;
@@ -26,10 +28,12 @@ public class HttpServer extends AllDirectives implements Runnable {
     @Getter
     private CompletionStage<ServerBinding> binding;
     private final Materializer materializer;
+    private final ActorRef server;
 
-    public HttpServer(ActorSystem system) {
+    public HttpServer(ActorSystem system, ActorRef server) {
         this.system = system;
         materializer = Materializer.matFromSystem(system);
+        this.server = server;
     }
 
     @Override
@@ -52,7 +56,9 @@ public class HttpServer extends AllDirectives implements Runnable {
                             ComparisonRequest comparisonRequest = ComparisonRequest.builder()
                                     .productName(value)
                                     .build();
-                            return complete(Integer.valueOf(comparisonService.updateAndGetOccurrencesCount(comparisonRequest)).toString());
+
+                            return complete(new PriceComparator(server).getPriceComparisonResponse(comparisonRequest).getSmallerPrice().toString());
+//                            Integer.valueOf(comparisonService.updateAndGetOccurrencesCount(comparisonRequest)).toString());
                         })
                 ),
                 path(segment("review").slash(segment()), value ->
