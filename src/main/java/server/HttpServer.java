@@ -1,7 +1,7 @@
 package server;
 
 import akka.NotUsed;
-import akka.actor.ActorRef;
+import akka.actor.ActorContext;
 import akka.actor.ActorSystem;
 import akka.http.javadsl.ConnectHttp;
 import akka.http.javadsl.Http;
@@ -15,8 +15,9 @@ import akka.stream.Materializer;
 import akka.stream.javadsl.Flow;
 import lombok.Getter;
 import model.request.ComparisonRequest;
-import server.comparator.PriceComparator;
+import model.response.PriceComparisonResponse;
 import server.service.ComparisonService;
+import server.util.ComparisonUtil;
 
 import java.util.concurrent.CompletionStage;
 
@@ -28,12 +29,13 @@ public class HttpServer extends AllDirectives implements Runnable {
     @Getter
     private CompletionStage<ServerBinding> binding;
     private final Materializer materializer;
-    private final ActorRef server;
+    private final ActorContext context;
+    private final String HTTP_SERVER_LOG_STRING = "[HTTP SERVER]: ";
 
-    public HttpServer(ActorSystem system, ActorRef server) {
+    public HttpServer(ActorSystem system, ActorContext context) {
         this.system = system;
         materializer = Materializer.matFromSystem(system);
-        this.server = server;
+        this.context = context;
     }
 
     @Override
@@ -57,8 +59,9 @@ public class HttpServer extends AllDirectives implements Runnable {
                                     .productName(value)
                                     .build();
 
-                            return complete(new PriceComparator(server).getPriceComparisonResponse(comparisonRequest).getSmallerPrice().toString());
-//                            Integer.valueOf(comparisonService.updateAndGetOccurrencesCount(comparisonRequest)).toString());
+                            PriceComparisonResponse priceComparisonResponse = ComparisonUtil.getPriceComparisonResponse(context, comparisonRequest, HTTP_SERVER_LOG_STRING);
+
+                            return complete(priceComparisonResponse.getStatus() != null ? priceComparisonResponse.getStatus() : priceComparisonResponse.getSmallerPrice().toString());
                         })
                 ),
                 path(segment("review").slash(segment()), value ->

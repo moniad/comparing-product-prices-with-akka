@@ -1,10 +1,8 @@
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
-import akka.http.javadsl.ServerBinding;
 import client.Client;
 import model.request.TerminateRequest;
-import server.HttpServer;
 import server.Server;
 
 import java.io.BufferedReader;
@@ -18,12 +16,9 @@ public class Main {
     final static ActorSystem system = ActorSystem.create("local_system");
     private final static ActorRef server = system.actorOf(Props.create(Server.class), "server");
     private final static int clientsCount = 3;
-    private static final HttpServer httpServer = new HttpServer(system, server);
-    private static Thread httpServerThread;
 
     public static void main(String[] args) {
         createClients();
-        startHttpServer();
         System.out.println("Started app");
         delegateJobs();
         finish();
@@ -34,11 +29,6 @@ public class Main {
             ActorRef client = system.actorOf(Props.create(Client.class, i, server), "client" + i);
             clientsList.add(client);
         }
-    }
-
-    static void startHttpServer() {
-        httpServerThread = new Thread(httpServer);
-        httpServerThread.start();
     }
 
     private static void delegateJobs() {
@@ -71,7 +61,6 @@ public class Main {
 
     private static void finish() {
         terminateServerAndClients();
-        unbindServer();
         system.terminate();
     }
 
@@ -81,17 +70,5 @@ public class Main {
         for (ActorRef client : clientsList) {
             client.tell(terminateRequest, null);
         }
-    }
-
-    private static void unbindServer() {
-        try {
-            httpServerThread.join();
-        } catch (InterruptedException e) {
-            System.out.println("Interrupted");
-        }
-        httpServer.getBinding()
-                .thenCompose(ServerBinding::unbind) // trigger unbinding from the port
-                .thenAccept(unbound -> system.terminate()); // and shutdown when done
-        System.out.println("Unbinded HTTP server. Closing app...");
     }
 }

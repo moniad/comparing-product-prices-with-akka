@@ -16,6 +16,7 @@ import static akka.pattern.Patterns.ask;
 
 @Data
 public class ResponseUtil {
+    private static int usageCounter = 0;
     ActorContext context;
     ActorRef client;
     ActorRef priceFinderActor1;
@@ -31,9 +32,9 @@ public class ResponseUtil {
 
     public ResponseUtil(ActorContext context, ActorRef sender, ComparisonRequest comparisonRequest, Duration timeoutDuration) {
         client = sender;
-        priceFinderActor1 = context.actorOf(Props.create(PriceFinder.class), "priceFinder1");
-        priceFinderActor2 = context.actorOf(Props.create(PriceFinder.class), "priceFinder2");
-        occurrencesCountActor = context.actorOf(Props.create(OccurrencesCountFinder.class), "occurrenceFinder1");
+        priceFinderActor1 = context.actorOf(Props.create(PriceFinder.class), "priceFinderA" + usageCounter++);
+        priceFinderActor2 = context.actorOf(Props.create(PriceFinder.class), "priceFinderB" + usageCounter++);
+        occurrencesCountActor = context.actorOf(Props.create(OccurrencesCountFinder.class), "occurrenceFinderA" + usageCounter++);
 
         price1 = ask(priceFinderActor1, comparisonRequest, timeoutDuration).toCompletableFuture();
         price2 = ask(priceFinderActor2, comparisonRequest, timeoutDuration).toCompletableFuture();

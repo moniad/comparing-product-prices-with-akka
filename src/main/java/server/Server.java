@@ -4,12 +4,15 @@ import akka.actor.AbstractActor;
 import akka.actor.Props;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
+import akka.http.javadsl.ServerBinding;
 import model.request.ComparisonRequest;
 import model.request.TerminateRequest;
 import server.comparator.PriceComparator;
 import server.finder.DbClient;
 
 public class Server extends AbstractActor {
+    private HttpServer httpServer;
+    private Thread httpServerThread;
     private final String SERVER_LOG_STRING = "[SERVER] ";
     private final DbClient dbClient = new DbClient();
     private static int usageCounter = 0;
@@ -34,9 +37,29 @@ public class Server extends AbstractActor {
     @Override
     public void preStart() {
         dbClient.createRequestTable();
+        httpServer = new HttpServer(getContext().getSystem(), getContext());
+        startHttpServer();
+    }
+
+    private void startHttpServer() {
+        httpServerThread = new Thread(httpServer);
+        httpServerThread.start();
     }
 
     private void terminate() {
         context().stop(self());
+        unbindHttpServer();
+    }
+
+    private void unbindHttpServer() {
+        try {
+            httpServerThread.join();
+        } catch (InterruptedException e) {
+            System.out.println("Interrupted");
+        }
+        httpServer.getBinding()
+                .thenCompose(ServerBinding::unbind) // trigger unbinding from the port
+                .thenAccept(unbound -> getContext().getSystem().terminate()); // and shutdown when done
+        System.out.println("Unbinded HTTP server. Closing app...");
     }
 }

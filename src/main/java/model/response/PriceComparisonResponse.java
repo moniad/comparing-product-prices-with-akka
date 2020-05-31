@@ -8,4 +8,5 @@ import lombok.Data;
 public class PriceComparisonResponse {
     private final Integer smallerPrice;
     private final Integer occurrenceCount;
+    private final String status;
 }
