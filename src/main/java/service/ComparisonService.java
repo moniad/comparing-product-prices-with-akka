@@ -16,12 +16,14 @@ public class ComparisonService {
     private static final DbClient dbClient = new DbClient();
     private static final String OPINEO_SEARCH_URL = "https://www.opineo.pl/?szukaj=";
     private final Random random = new Random();
-    private final long TIMEOUT = 3000;
+    private final long WEB_TIMEOUT = 3000;
+    private final long DB_TIMEOUT = 300; // todo: handle timeout
 
     public PriceComparisonResponse getPriceComparisonResponse(ComparisonRequest comparisonRequest) {
+//        CompletableFuture<Object> futurePrice1 = ask(target, "some message", DB_TIMEOUT).toCompletableFuture(); todo
+
         int price1 = getPrice();
         int price2 = getPrice(); // TODO: this and db access as well need to be paralleled
-        // todo: handle timeouts
 
         int occurrenceCount = dbClient.handleClientRequest(comparisonRequest.getProductName());
         int smallerPrice = Math.min(price1, price2);
@@ -52,7 +54,7 @@ public class ComparisonService {
 
     private CompletionStage<Object> getProductAssets(ActorSystem system, String url, Materializer materializer) {
         return Http.get(system).singleRequest(HttpRequest.create(url)).thenCompose(response ->
-                response.entity().toStrict(TIMEOUT, materializer)).thenApply(
+                response.entity().toStrict(WEB_TIMEOUT, materializer)).thenApply(
                 entity -> Jsoup.parse(entity.getData().utf8String())
                         .body()
                         .getElementById("page")

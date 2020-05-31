@@ -22,7 +22,9 @@ public class Client extends AbstractActor {
         return receiveBuilder()
                 .match(String.class, productName -> {
                     System.out.println(CLIENT_LOG_STRING + "asking server for " + productName + "'s price...");
-                    ComparisonRequest comparisonRequest = ComparisonRequest.builder().productName(productName).build();
+                    ComparisonRequest comparisonRequest = ComparisonRequest.builder()
+                            .productName(productName)
+                            .build();
                     server.tell(comparisonRequest, getSelf());
                 })
                 .match(PriceComparisonResponse.class, response -> {

@@ -2,21 +2,19 @@ package server;
 
 import akka.actor.AbstractActor;
 import akka.actor.AllForOneStrategy;
+import akka.actor.Props;
 import akka.actor.SupervisorStrategy;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import akka.japi.pf.DeciderBuilder;
 import client.DbClient;
 import model.ComparisonRequest;
-import model.PriceComparisonResponse;
-import service.ComparisonService;
 
 import java.time.Duration;
 
 public class Server extends AbstractActor {
     private final String SERVER_LOG_STRING = "[SERVER] ";
     private final DbClient dbClient = new DbClient();
-    private final ComparisonService comparisonService = new ComparisonService();
 
     private static final SupervisorStrategy strategy //todo: modify
             = new AllForOneStrategy( // OneForOneStrategy
@@ -37,22 +35,8 @@ public class Server extends AbstractActor {
                     String productName = comparisonRequest.getProductName();
                     System.out.println(SERVER_LOG_STRING + "RECEIVED msg: " + productName);
 
-                    PriceComparisonResponse priceComparisonResponse = comparisonService.getPriceComparisonResponse(comparisonRequest);
-
-                    System.out.println(SERVER_LOG_STRING + productName.toUpperCase() + " handled " + priceComparisonResponse.getOccurrenceCount() + " times");
-
-                    getSender().tell(priceComparisonResponse, getSelf());
-
-                    System.out.println(SERVER_LOG_STRING + "SENT MSG: " + priceComparisonResponse.toString());
-
-//                    if (s.startsWith("m")) {
-//                        context().child("multiplyWorker").get().tell(s, getSelf()); // send task to child
-//                    } else if (s.startsWith("d")) {
-//                        context().child("divideWorker").get().tell(s, getSelf()); // send task to child
-//                    } else if (s.startsWith("result")) {
-//                        System.out.println(s);              // result from child
-//                    }
-
+                    // server sends ComparisonRequest on client's behalf
+                    context().actorOf(Props.create(PriceComparator.class)).tell(comparisonRequest, getSender());
                 })
                 .matchAny(o -> log.info("received unknown message"))
                 .build();
@@ -61,9 +45,6 @@ public class Server extends AbstractActor {
     // optional
     @Override
     public void preStart() {
-//        context().actorOf(Props.create(Z1_MultiplyWorker.class), "multiplyWorker"); // todo: remove or change to shopActors?
-//        context().actorOf(Props.create(Z1_DivideWorker.class), "divideWorker");
-
         dbClient.createRequestTable();
     }
 

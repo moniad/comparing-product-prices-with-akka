@@ -47,9 +47,11 @@ public class HttpServer extends AllDirectives implements Runnable {
 
     private Route createRoute() {
         return concat(
-                path(segment("price").slash(segment()), value ->
+                path(segment("price").slash(segment()), value -> // TODO: handle timeout
                         get(() -> {
-                            ComparisonRequest comparisonRequest = ComparisonRequest.builder().productName(value).build();
+                            ComparisonRequest comparisonRequest = ComparisonRequest.builder()
+                                    .productName(value)
+                                    .build();
                             return complete((comparisonService.getPriceComparisonResponse(comparisonRequest).toString()));
                         })
                 ),
