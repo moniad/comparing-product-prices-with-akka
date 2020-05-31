@@ -4,9 +4,9 @@ import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
-import model.ComparisonRequest;
-import model.PriceComparisonResponse;
-import model.TerminateRequest;
+import model.request.ComparisonRequest;
+import model.request.TerminateRequest;
+import model.response.PriceComparisonResponse;
 
 public class Client extends AbstractActor {
     protected ActorRef server;

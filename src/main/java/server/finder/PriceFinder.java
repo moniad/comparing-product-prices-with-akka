@@ -1,10 +1,10 @@
-package server;
+package server.finder;
 
 import akka.actor.AbstractActor;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
-import model.ComparisonRequest;
-import model.SinglePriceResponse;
+import model.request.ComparisonRequest;
+import model.response.SinglePriceResponse;
 
 import java.util.Random;
 

@@ -4,9 +4,10 @@ import akka.actor.AbstractActor;
 import akka.actor.Props;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
-import client.DbClient;
-import model.ComparisonRequest;
-import model.TerminateRequest;
+import model.request.ComparisonRequest;
+import model.request.TerminateRequest;
+import server.comparator.PriceComparator;
+import server.finder.DbClient;
 
 public class Server extends AbstractActor {
     private final String SERVER_LOG_STRING = "[SERVER] ";

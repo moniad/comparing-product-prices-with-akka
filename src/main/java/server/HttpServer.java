@@ -13,8 +13,8 @@ import akka.http.javadsl.server.Route;
 import akka.stream.Materializer;
 import akka.stream.javadsl.Flow;
 import lombok.Getter;
-import model.ComparisonRequest;
-import service.ComparisonService;
+import model.request.ComparisonRequest;
+import server.service.ComparisonService;
 
 import java.util.concurrent.CompletionStage;
 

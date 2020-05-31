@@ -3,7 +3,7 @@ import akka.actor.ActorSystem;
 import akka.actor.Props;
 import akka.http.javadsl.ServerBinding;
 import client.Client;
-import model.TerminateRequest;
+import model.request.TerminateRequest;
 import server.HttpServer;
 import server.Server;
 

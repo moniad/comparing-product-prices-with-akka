@@ -1,4 +1,4 @@
-package client;
+package server.finder;
 
 import lombok.Getter;
 

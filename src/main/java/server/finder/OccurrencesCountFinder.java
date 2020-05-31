@@ -1,11 +1,11 @@
-package server;
+package server.finder;
 
 import akka.actor.AbstractActor;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
-import model.ComparisonRequest;
-import model.OccurrenceCountResponse;
-import service.ComparisonService;
+import model.request.ComparisonRequest;
+import model.response.OccurrenceCountResponse;
+import server.service.ComparisonService;
 
 public class OccurrencesCountFinder extends AbstractActor {
     private final ComparisonService comparisonService = new ComparisonService();

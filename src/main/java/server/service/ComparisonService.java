@@ -1,12 +1,12 @@
-package service;
+package server.service;
 
 import akka.actor.ActorSystem;
 import akka.http.javadsl.Http;
 import akka.http.javadsl.model.HttpRequest;
 import akka.stream.Materializer;
-import client.DbClient;
-import model.ComparisonRequest;
+import model.request.ComparisonRequest;
 import org.jsoup.Jsoup;
+import server.finder.DbClient;
 
 import java.util.concurrent.CompletionStage;
 
