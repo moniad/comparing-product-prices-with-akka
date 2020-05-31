@@ -2,23 +2,24 @@ package client;
 
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
+import akka.event.Logging;
+import akka.event.LoggingAdapter;
 import model.ComparisonRequest;
 import model.PriceComparisonResponse;
+import model.TerminateRequest;
 
 public class Client extends AbstractActor {
-    private final int clientNumber;
     protected ActorRef server;
     private final String CLIENT_LOG_STRING;
+    private final LoggingAdapter log = Logging.getLogger(getContext().getSystem(), this);
 
     Client(int clientNumber, ActorRef server) {
-        this.clientNumber = clientNumber;
         this.server = server;
         this.CLIENT_LOG_STRING = String.format("[CLIENT NO. %d] ", clientNumber);
     }
 
     @Override
     public Receive createReceive() {
-        // result from server TODO
         return receiveBuilder()
                 .match(String.class, productName -> {
                     System.out.println(CLIENT_LOG_STRING + "asking server for " + productName + "'s price...");
@@ -27,14 +28,14 @@ public class Client extends AbstractActor {
                             .build();
                     server.tell(comparisonRequest, getSelf());
                 })
-                .match(PriceComparisonResponse.class, response -> {
-                    System.out.println(CLIENT_LOG_STRING + "RECEIVED: " + response);
-                })
-                .matchAny(i -> System.out.println(CLIENT_LOG_STRING + "RECEIVED: unknown message"))
+                // result from server
+                .match(PriceComparisonResponse.class, response -> System.out.println(CLIENT_LOG_STRING + "RECEIVED: " + response))
+                .match(TerminateRequest.class, terminateRequest -> terminate())
+                .matchAny(i -> log.info(CLIENT_LOG_STRING + "RECEIVED: unknown message"))
                 .build();
     }
 
-    protected void terminate() { // todo: ok?
-//        server.terminate();
+    private void terminate() {
+        context().stop(self());
     }
 }

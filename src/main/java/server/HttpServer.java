@@ -42,17 +42,17 @@ public class HttpServer extends AllDirectives implements Runnable {
         binding = http.bindAndHandle(routeFlow,
                 ConnectHttp.toHost("localhost", 8080), materializer);
 
-        System.out.println("server.Server online at http://localhost:8080/");
+        System.out.println("Server online at http://localhost:8080/");
     }
 
     private Route createRoute() {
         return concat(
-                path(segment("price").slash(segment()), value -> // TODO: handle timeout
+                path(segment("price").slash(segment()), value ->
                         get(() -> {
                             ComparisonRequest comparisonRequest = ComparisonRequest.builder()
                                     .productName(value)
                                     .build();
-                            return complete((comparisonService.getPriceComparisonResponse(comparisonRequest).toString()));
+                            return complete(Integer.valueOf(comparisonService.updateAndGetOccurrencesCount(comparisonRequest)).toString());
                         })
                 ),
                 path(segment("review").slash(segment()), value ->

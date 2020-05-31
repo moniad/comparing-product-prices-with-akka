@@ -22,34 +22,28 @@ public class DbClient {
         }
     }
 
-    public int handleClientRequest(String productName) {
+    public int updateAndGetOccurrencesCount(String productName) {
         try {
-            return updateAndGetOccurrencesCount(productName);
-        } catch (SQLException e) {
-            // if the error message is "out of memory", it probably means no database file is found
+            PreparedStatement ps;
+            int occurrencesCount = getOccurrencesCount(productName);
+            if (occurrencesCount >= 0) {
+                ps = dbConnection.prepareStatement(UPDATE_QUERY); // todo: zapis do bazy ma nie spowalniać odpowiedzi do klienta
+            } else {
+                ps = dbConnection.prepareStatement(INSERT_QUERY);
+            }
+            ps.setString(1, productName);
+            ps.executeUpdate();
+            return occurrencesCount + 1;
+        } catch (SQLException e) {  // if the error message is "out of memory", it probably means no database file is found
             System.err.println(e.getMessage());
             try {
                 if (dbConnection != null)
                     dbConnection.close();
-            } catch (SQLException e2) {
-//                 connection close failed.
+            } catch (SQLException e2) { // connection close failed.
                 System.err.println(e2.getMessage());
             }
             return -1;
         }
-    }
-
-    private int updateAndGetOccurrencesCount(String productName) throws SQLException {
-        PreparedStatement ps;
-        int occurrencesCount = getOccurrencesCount(productName);
-        if (occurrencesCount >= 0) {
-            ps = dbConnection.prepareStatement(UPDATE_QUERY); // todo: zapis do bazy ma nie spowalniać odpowiedzi do klienta
-        } else {
-            ps = dbConnection.prepareStatement(INSERT_QUERY);
-        }
-        ps.setString(1, productName);
-        ps.executeUpdate();
-        return occurrencesCount + 1;
     }
 
     private int getOccurrencesCount(String productName) throws SQLException {

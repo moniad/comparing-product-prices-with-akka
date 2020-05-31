@@ -6,41 +6,17 @@ import akka.http.javadsl.model.HttpRequest;
 import akka.stream.Materializer;
 import client.DbClient;
 import model.ComparisonRequest;
-import model.PriceComparisonResponse;
 import org.jsoup.Jsoup;
 
-import java.util.Random;
 import java.util.concurrent.CompletionStage;
 
 public class ComparisonService {
     private static final DbClient dbClient = new DbClient();
     private static final String OPINEO_SEARCH_URL = "https://www.opineo.pl/?szukaj=";
-    private final Random random = new Random();
     private final long WEB_TIMEOUT = 3000;
-    private final long DB_TIMEOUT = 300; // todo: handle timeout
 
-    public PriceComparisonResponse getPriceComparisonResponse(ComparisonRequest comparisonRequest) {
-//        CompletableFuture<Object> futurePrice1 = ask(target, "some message", DB_TIMEOUT).toCompletableFuture(); todo
-
-        int price1 = getPrice();
-        int price2 = getPrice(); // TODO: this and db access as well need to be paralleled
-
-        int occurrenceCount = dbClient.handleClientRequest(comparisonRequest.getProductName());
-        int smallerPrice = Math.min(price1, price2);
-
-        return PriceComparisonResponse.builder()
-                .smallerPrice(smallerPrice)
-                .occurrenceCount(occurrenceCount)
-                .build();
-    }
-
-    public int getPrice() {
-        try {
-            Thread.sleep(random.nextInt(401) + 100); // 100-500 ms
-        } catch (InterruptedException e) {
-            System.err.println(e.getMessage());
-        }
-        return random.nextInt(10) + 1; // 1-10
+    public synchronized int updateAndGetOccurrencesCount(ComparisonRequest comparisonRequest) {
+        return dbClient.updateAndGetOccurrencesCount(comparisonRequest.getProductName());
     }
 
     public CompletionStage<Object> getReviewResponse(ActorSystem system, Materializer materializer, ComparisonRequest comparisonRequest) {

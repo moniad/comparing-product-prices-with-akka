@@ -3,6 +3,7 @@ import akka.actor.ActorSystem;
 import akka.actor.Props;
 import akka.http.javadsl.ServerBinding;
 import client.Client;
+import model.TerminateRequest;
 import server.HttpServer;
 import server.Server;
 
@@ -13,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Main {
-    private static List<ActorRef> clientsList = new ArrayList<>();
+    private static final List<ActorRef> clientsList = new ArrayList<>();
     final static ActorSystem system = ActorSystem.create("local_system");
     private final static ActorRef server = system.actorOf(Props.create(Server.class), "server");
     private final static int clientsCount = 3;
@@ -24,10 +25,8 @@ public class Main {
         createClients();
         startHttpServer();
         System.out.println("Started app");
-        parseInput();
-        // finish
-        unbindServer();
-        system.terminate();
+        delegateJobs();
+        finish();
     }
 
     private static void createClients() {
@@ -42,7 +41,7 @@ public class Main {
         httpServerThread.start();
     }
 
-    private static void parseInput() {
+    private static void delegateJobs() {
         System.out.println(String.format("Type client NUMBER [0-%d] and product NAME to compare its price or 'q' to QUIT", clientsCount - 1));
 
         // read line & send to server
@@ -67,6 +66,20 @@ public class Main {
             } catch (IOException | NumberFormatException e) {
                 System.err.println(e.getMessage());
             }
+        }
+    }
+
+    private static void finish() {
+        terminateServerAndClients();
+        unbindServer();
+        system.terminate();
+    }
+
+    private static void terminateServerAndClients() {
+        TerminateRequest terminateRequest = new TerminateRequest();
+        server.tell(terminateRequest, null);
+        for (ActorRef client : clientsList) {
+            client.tell(terminateRequest, null);
         }
     }
 

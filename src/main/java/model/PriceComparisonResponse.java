@@ -6,6 +6,6 @@ import lombok.Data;
 @Data
 @Builder
 public class PriceComparisonResponse {
-    private final int smallerPrice;
-    private final int occurrenceCount;
+    private final Integer smallerPrice;
+    private final Integer occurrenceCount;
 }
