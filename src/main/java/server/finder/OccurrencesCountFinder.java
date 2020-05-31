@@ -16,7 +16,7 @@ public class OccurrencesCountFinder extends AbstractActor {
     public Receive createReceive() {
         return receiveBuilder()
                 .match(ComparisonRequest.class, comparisonRequest -> {
-                    int occurrenceCount = comparisonService.updateAndGetOccurrencesCount(comparisonRequest);
+                    int occurrenceCount = comparisonService.getOccurrencesCount(comparisonRequest);
 
                     log.info(OCCURRENCE_COUNT_FINDER_LOG_STRING + String.format("Finding %s's occurrence count",
                             comparisonRequest.getProductName()));
@@ -25,6 +25,7 @@ public class OccurrencesCountFinder extends AbstractActor {
                                     .occurrenceCount(occurrenceCount)
                                     .build(),
                             getSelf());
+                    DbClient.updateOccurrencesCount(comparisonRequest.getProductName());
                     context().stop(self());
                 })
                 .matchAny(m -> log.info("Unknown message: " + m))

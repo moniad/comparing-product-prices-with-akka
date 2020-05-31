@@ -51,6 +51,7 @@ public class ComparisonUtil {
         return PriceComparisonResponse.builder()
                 .occurrenceCount(occurrencesCountValue == -1 ? null : occurrencesCountValue)
                 .smallerPrice(smallerPriceValue == -1 ? null : smallerPriceValue)
+                .status("OK")
                 .build();
     }
 

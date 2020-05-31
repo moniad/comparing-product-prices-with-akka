@@ -15,8 +15,8 @@ public class ComparisonService {
     private static final String OPINEO_SEARCH_URL = "https://www.opineo.pl/?szukaj=";
     private final long WEB_TIMEOUT = 3000;
 
-    public synchronized int updateAndGetOccurrencesCount(ComparisonRequest comparisonRequest) {
-        return dbClient.updateAndGetOccurrencesCount(comparisonRequest.getProductName());
+    public Integer getOccurrencesCount(ComparisonRequest comparisonRequest) {
+        return dbClient.getOccurrencesCount(comparisonRequest.getProductName());
     }
 
     public CompletionStage<Object> getReviewResponse(ActorSystem system, Materializer materializer, ComparisonRequest comparisonRequest) {

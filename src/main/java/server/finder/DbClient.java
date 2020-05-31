@@ -7,10 +7,9 @@ import java.sql.*;
 public class DbClient {
     private static final String SQLITE_DB_FILE_PATH = "akka.db";
     private static final String SQLITE_DB_CONNECTION_STR = "jdbc:sqlite:" + SQLITE_DB_FILE_PATH;
-    private static final String CREATE_TABLE = "create table if not exists request (product_name string not null unique, occurrences_count int)";
-    private static final String INSERT_QUERY = "insert into request values(?,0)";
-    private static final String SELECT_QUERY = "select occurrences_count from request where product_name = ?";
-    private static final String UPDATE_QUERY = "update request set occurrences_count = occurrences_count + 1 where product_name = ?";
+    private static final String CREATE_TABLE = "CREATE TABLE IF NOT EXISTS request (product_name string NOT NULL UNIQUE, occurrences_count int)";
+    private static final String UPSERT_QUERY = "INSERT INTO request values(?,1) ON CONFLICT(product_name) DO UPDATE SET occurrences_count=occurrences_count+1;";
+    private static final String SELECT_QUERY = "SELECT occurrences_count FROM request WHERE product_name = ?";
     @Getter
     private static Connection dbConnection;
 
@@ -22,39 +21,40 @@ public class DbClient {
         }
     }
 
-    public int updateAndGetOccurrencesCount(String productName) {
+    public static void updateOccurrencesCount(String productName) {
         try {
-            PreparedStatement ps;
-            int occurrencesCount = getOccurrencesCount(productName);
-            if (occurrencesCount >= 0) {
-                ps = dbConnection.prepareStatement(UPDATE_QUERY); // todo: zapis do bazy ma nie spowalniać odpowiedzi do klienta
-            } else {
-                ps = dbConnection.prepareStatement(INSERT_QUERY);
-            }
+            PreparedStatement ps = dbConnection.prepareStatement(UPSERT_QUERY);
             ps.setString(1, productName);
             ps.executeUpdate();
-            return occurrencesCount + 1;
         } catch (SQLException e) {  // if the error message is "out of memory", it probably means no database file is found
             System.err.println(e.getMessage());
-            try {
-                if (dbConnection != null)
-                    dbConnection.close();
-            } catch (SQLException e2) { // connection close failed.
-                System.err.println(e2.getMessage());
-            }
-            return -1;
+            tryToCloseConnection();
         }
     }
 
-    private int getOccurrencesCount(String productName) throws SQLException {
-        PreparedStatement ps = dbConnection.prepareStatement(SELECT_QUERY);
-        ps.setString(1, productName);
-
-        ResultSet rs = ps.executeQuery();
-        if (!rs.next()) {
-            return -1;
+    private static void tryToCloseConnection() {
+        try {
+            if (dbConnection != null)
+                dbConnection.close();
+        } catch (SQLException e2) { // connection close failed.
+            System.err.println(e2.getMessage());
         }
-        return Integer.parseInt(rs.getString("occurrences_count"));
+    }
+
+    public Integer getOccurrencesCount(String productName) {
+        try {
+            PreparedStatement ps = dbConnection.prepareStatement(SELECT_QUERY);
+            ps.setString(1, productName);
+
+            ResultSet rs = ps.executeQuery();
+            if (!rs.next()) {
+                return -1;
+            }
+            return Integer.parseInt(rs.getString("occurrences_count"));
+        } catch (SQLException e) {
+            System.err.println(e.getMessage());
+        }
+        return null;
     }
 
     public void createRequestTable() {
