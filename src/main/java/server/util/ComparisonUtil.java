@@ -13,6 +13,9 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static model.Status.OK;
+import static model.Status.PRICE_ERROR;
+
 public class ComparisonUtil {
     private static final Duration timeoutDuration = Duration.ofMillis(300);
 
@@ -48,10 +51,11 @@ public class ComparisonUtil {
         int smallerPriceValue = smallerPrice.get();
         int occurrencesCountValue = occurrencesCount.get();
 
+        boolean isPriceUnavailable = smallerPriceValue == -1;
         return PriceComparisonResponse.builder()
                 .occurrenceCount(occurrencesCountValue == -1 ? null : occurrencesCountValue)
-                .smallerPrice(smallerPriceValue == -1 ? null : smallerPriceValue)
-                .status("OK")
+                .smallerPrice(isPriceUnavailable ? null : smallerPriceValue)
+                .status((isPriceUnavailable ? PRICE_ERROR : OK).getStatusDescription())
                 .build();
     }
 

@@ -22,6 +22,7 @@ import server.util.ComparisonUtil;
 import java.util.concurrent.CompletionStage;
 
 import static akka.http.javadsl.server.PathMatchers.segment;
+import static model.Status.OK;
 
 public class HttpServer extends AllDirectives implements Runnable {
     private final ActorSystem system;
@@ -41,9 +42,6 @@ public class HttpServer extends AllDirectives implements Runnable {
     @Override
     public void run() {
         final Http http = Http.get(system);
-
-        //In order to access all directives we need an instance where the routes are defined.
-
         final Flow<HttpRequest, HttpResponse, NotUsed> routeFlow = createRoute().flow(system, materializer);
         binding = http.bindAndHandle(routeFlow,
                 ConnectHttp.toHost("localhost", 8080), materializer);
@@ -60,8 +58,7 @@ public class HttpServer extends AllDirectives implements Runnable {
                                     .build();
 
                             PriceComparisonResponse priceComparisonResponse = ComparisonUtil.getPriceComparisonResponse(context, comparisonRequest, HTTP_SERVER_LOG_STRING);
-
-                            return complete(priceComparisonResponse.getStatus() != null ? priceComparisonResponse.getStatus() : priceComparisonResponse.getSmallerPrice().toString());
+                            return complete(!priceComparisonResponse.getStatus().equals(OK.getStatusDescription()) ? priceComparisonResponse.getStatus() : priceComparisonResponse.toString());
                         })
                 ),
                 path(segment("review").slash(segment()), value ->

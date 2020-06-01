@@ -8,6 +8,7 @@ import server.util.ResponseUtil;
 
 import java.util.concurrent.CompletableFuture;
 
+import static model.Status.OCCURRENCE_COUNTER_ERROR;
 import static server.util.ComparisonUtil.buildResponse;
 import static server.util.ComparisonUtil.prepareResponse;
 
@@ -50,8 +51,12 @@ public class PriceComparator extends AbstractActor {
     private void logSendingResponse(ComparisonRequest comparisonRequest, PriceComparisonResponse priceComparisonResponse) {
         String productName = comparisonRequest.getProductName();
         Integer occurrenceCount = priceComparisonResponse.getOccurrenceCount();
-        System.out.println((PRICE_COMPARATOR_LOG_STRING + productName.toUpperCase() + " handled " +
-                ((occurrenceCount == null) ? " not available" : occurrenceCount + " times")));
+
+        if (occurrenceCount == null) {
+            System.out.println(PRICE_COMPARATOR_LOG_STRING + productName.toUpperCase() + ". " + OCCURRENCE_COUNTER_ERROR.getStatusDescription());
+        } else {
+            System.out.println(PRICE_COMPARATOR_LOG_STRING + productName.toUpperCase() + " handled " + (occurrenceCount + " times"));
+        }
 
         System.out.println(PRICE_COMPARATOR_LOG_STRING + "SENT MSG: " + priceComparisonResponse.toString());
     }

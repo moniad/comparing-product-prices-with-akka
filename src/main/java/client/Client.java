@@ -8,6 +8,8 @@ import model.request.ComparisonRequest;
 import model.request.TerminateRequest;
 import model.response.PriceComparisonResponse;
 
+import static model.Status.OK;
+
 public class Client extends AbstractActor {
     protected ActorRef server;
     private final String CLIENT_LOG_STRING;
@@ -29,7 +31,11 @@ public class Client extends AbstractActor {
                     server.tell(comparisonRequest, getSelf());
                 })
                 // result from server
-                .match(PriceComparisonResponse.class, response -> System.out.println(CLIENT_LOG_STRING + "RECEIVED: " + response))
+                .match(PriceComparisonResponse.class, response -> {
+                    String responseStatus = response.getStatus();
+                    System.out.println(CLIENT_LOG_STRING + "RECEIVED: " + response +
+                            (!responseStatus.equals(OK.getStatusDescription()) ? "\n[UNAVAILABILITY] " + responseStatus : ""));
+                })
                 .match(TerminateRequest.class, terminateRequest -> terminate())
                 .matchAny(i -> log.info(CLIENT_LOG_STRING + "RECEIVED: unknown message"))
                 .build();
